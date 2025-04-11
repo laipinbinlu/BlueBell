@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
+    <data-source source="LOCAL" name="bluebell@localhost" uuid="29abfd9f-1738-4247-84c3-2eb1a332d55b">
+      <driver-ref>mysql_aurora_aws</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>software.aws.rds.jdbc.mysql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql:aws://localhost:3306/bluebell</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+    <data-source source="LOCAL" name="0@localhost" uuid="467ad0df-c0d2-415c-9d1f-ed1bb3db304c">
+      <driver-ref>redis</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>jdbc.RedisDriver</jdbc-driver>
+      <jdbc-url>jdbc:redis://localhost:6379/0</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
+  </component>
+</project>
