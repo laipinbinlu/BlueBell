@@ -175,3 +175,6 @@
 {"level":"DEBUG","time":"2025-03-07T15:24:29.964+0800","caller":"blue_bell/main.go:42","msg":"logger init success"}
 {"level":"INFO","time":"2025-03-07T15:24:41.061+0800","caller":"blue_bell/main.go:93","msg":"Shutdown Server ..."}
 {"level":"INFO","time":"2025-03-07T15:24:41.063+0800","caller":"blue_bell/main.go:102","msg":"Server exiting"}
+{"level":"DEBUG","time":"2025-04-24T15:22:54.119+0800","caller":"blue_bell/main.go:42","msg":"logger init success"}
+{"level":"INFO","time":"2025-04-24T15:37:35.407+0800","caller":"blue_bell/main.go:93","msg":"Shutdown Server ..."}
+{"level":"INFO","time":"2025-04-24T15:37:35.408+0800","caller":"blue_bell/main.go:102","msg":"Server exiting"}

@@ -2,11 +2,12 @@ package controller
 
 import (
 	"bytes"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
 
 // 单元测试
@@ -29,7 +30,7 @@ func TestCreatePostHandler(t *testing.T) {
 
 	r.ServeHTTP(w, req) // 服务
 
-	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, 200, w.Code) // 判断是否请求成功
 
 	assert.Contains(t, w.Body.String(), "需要登录")
 }

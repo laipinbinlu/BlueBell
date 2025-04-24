@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	dbcfg := settings.MysqlConfig{
+	dbcfg := settings.MysqlConfig{ // 写的是测试的时候的数据库的地址，并不是实际数据库的地址
 		Host:      "127.0.0.1",
 		Port:      3306,
 		User:      "root",
@@ -25,7 +25,7 @@ func init() {
 // 需要初始化db
 func TestCreatePost(t *testing.T) {
 	p := models.Post{
-		ID:          1234,
+		ID:          12345,
 		AuthorID:    123123,
 		CommunityID: 1,
 		Title:       "test",
