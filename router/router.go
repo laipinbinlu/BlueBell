@@ -5,10 +5,12 @@ import (
 	"blue_bell/logger"
 	"blue_bell/middlewares"
 	"blue_bell/settings"
+	"net/http"
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
-	"time"
 )
 
 // Setup 注册路由
@@ -17,7 +19,7 @@ func Setup(config *settings.Config, mode string) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode) // 模式设置为发布模式，其他为调试模式
 	}
 	r := gin.New()
-	
+
 	// 添加CORS中间件
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"},
@@ -25,10 +27,10 @@ func Setup(config *settings.Config, mode string) *gin.Engine {
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length", "Access-Control-Allow-Origin"},
 		AllowCredentials: true,
-		MaxAge:          12 * time.Hour,
+		MaxAge:           12 * time.Hour,
 	}))
-	
-	// 使用配置好的日志,中间件的使用
+
+	// 使用配置好的日志,中间件的使用 限流的中间件，每2秒只能允许一个请求放入通过
 	r.Use(logger.GinLogger(), logger.GinRecovery(true), middlewares.RateLimitMiddleware(2*time.Second, 1))
 
 	r.GET("/ping", func(c *gin.Context) {
@@ -62,10 +64,29 @@ func Setup(config *settings.Config, mode string) *gin.Engine {
 		v1.GET("/posts", controller.GetPostListHandler)
 		// get 获取帖子的列表 该列表具有按照时间或分数展示帖子功能
 		v1.GET("/posts2", controller.GetPostListHandler2)
-
 	}
 	{ // 帖子投票功能
 		v1.POST("/vote", controller.PostVoteController)
+	}
+
+	{ // 私信功能
+		// 建立WebSocket连接请求
+		v1.GET("/ws", func(c *gin.Context) {
+			// 检查请求头是否包含upgrade字段
+			if c.GetHeader("Upgrade") != "websocket" {
+				c.JSON(http.StatusBadRequest, gin.H{"code": 400, "msg": "非WebSocket请求"})
+				return
+			}
+			controller.WebSocketHandler(c)
+		})
+		// 发送消息
+		v1.POST("/message", controller.SendMessageHandler)
+		// 获取消息列表
+		v1.GET("/messages", controller.GetMessageListHandler)
+		// 获取未读消息数量
+		v1.GET("/messages/unread/count", controller.GetUnreadCountHandler)
+		// 获取与特定用户的聊天历史
+		v1.GET("/messages/history", controller.GetChatHistoryHandler)
 	}
 
 	pprof.Register(r)
