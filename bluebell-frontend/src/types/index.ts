@@ -27,7 +27,7 @@ export interface Post {
 // API 响应类型
 export interface ApiResponse<T> {
   code: number;
-  message: string;
+  msg: string;
   data: T;
 }
 
@@ -38,22 +38,11 @@ export interface PostDetail extends Post {
 }
 
 // 登录响应类型
-export interface LoginResponse {
-  code: number;
-  message: string;
-  data: {
-    token: string;
-    user_id: number;
-    username: string;
-  };
-}
+export interface LoginResponse extends ApiResponse<{
+  user_id: string;
+  user_name: string;
+  token: string;
+}> {}
 
 // 注册响应类型
-export interface SignupResponse {
-  code: number;
-  message: string;
-  data: null | {
-    user_id: number;
-    username: string;
-  };
-} 
+export interface SignupResponse extends ApiResponse<null> {} 

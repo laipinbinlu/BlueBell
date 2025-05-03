@@ -4,46 +4,69 @@ import type { TabsProps } from 'antd';
 import type { FormInstance } from 'antd/es/form';
 import type { Rule } from 'antd/es/form';
 import { userApi } from '../services/api';
-import { LoginResponse, SignupResponse } from '../types';
+import type { ApiResponse } from '../types';
 
-interface FormValues {
-  type: 'login' | 'register';
+interface LoginFormValues {
   username: string;
   password: string;
-  confirmPassword?: string;
+}
+
+interface RegisterFormValues {
+  username: string;
+  password: string;
+  re_password: string;
 }
 
 const Auth: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [form] = Form.useForm<FormValues>();
+  const [loginForm] = Form.useForm<LoginFormValues>();
+  const [registerForm] = Form.useForm<RegisterFormValues>();
+  const [activeTab, setActiveTab] = useState<string>('login');
 
-  const handleSubmit = async (values: FormValues) => {
+  const handleLoginSubmit = async (values: LoginFormValues) => {
     try {
       setLoading(true);
       const { username, password } = values;
-      const isLogin = form.getFieldValue('type') === 'login';
-
-      if (isLogin) {
-        const { data: responseData } = await userApi.login(username, password);
-        if (responseData.code === 0 && responseData.data.token) {
-          localStorage.setItem('token', responseData.data.token);
-          message.success('登录成功！');
-          window.location.reload();
-        } else {
-          message.error(responseData.message || '登录失败');
-        }
+      const response = await userApi.login(username, password);
+      const responseData = response.data;
+      
+      console.log('登录响应:', responseData); // 调试日志
+      
+      if (responseData.code === 1000) { // 后端成功的状态码是1000
+        localStorage.setItem('token', responseData.data.token);
+        message.success('登录成功！');
+        window.location.reload();
       } else {
-        const { data: responseData } = await userApi.signup(username, password);
-        if (responseData.code === 0) {
-          message.success('注册成功！请登录');
-          form.setFieldsValue({ type: 'login' });
-        } else {
-          message.error(responseData.message || '注册失败');
-        }
+        message.error(responseData.msg || '登录失败');
       }
-    } catch (error) {
-      console.error('操作失败:', error);
-      message.error('操作失败，请重试');
+    } catch (error: any) {
+      console.error('登录失败:', error);
+      message.error(error.response?.data?.msg || error.message || '登录失败，请重试');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegisterSubmit = async (values: RegisterFormValues) => {
+    try {
+      setLoading(true);
+      const { username, password, re_password } = values;
+      
+      const response = await userApi.signup(username, password, re_password);
+      const responseData = response.data;
+
+      console.log('注册响应:', responseData); // 调试日志
+      
+      if (responseData.code === 1000) { // 后端成功的状态码是1000
+        message.success('注册成功！请登录');
+        setActiveTab('login');
+        registerForm.resetFields();
+      } else {
+        message.error(responseData.msg || '注册失败');
+      }
+    } catch (error: any) {
+      console.error('注册失败:', error);
+      message.error(error.response?.data?.msg || error.message || '注册失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -58,21 +81,26 @@ const Auth: React.FC = () => {
     },
   });
 
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    // 切换标签页时重置表单
+    if (key === 'login') {
+      loginForm.resetFields();
+    } else {
+      registerForm.resetFields();
+    }
+  };
+
   const items: TabsProps['items'] = [
     {
       key: 'login',
       label: '登录',
       children: (
         <Form
-          form={form}
+          form={loginForm}
           layout="vertical"
-          onFinish={handleSubmit}
-          initialValues={{ type: 'login' }}
+          onFinish={handleLoginSubmit}
         >
-          <Form.Item name="type" hidden>
-            <Input />
-          </Form.Item>
-
           <Form.Item
             name="username"
             label="用户名"
@@ -102,15 +130,10 @@ const Auth: React.FC = () => {
       label: '注册',
       children: (
         <Form
-          form={form}
+          form={registerForm}
           layout="vertical"
-          onFinish={handleSubmit}
-          initialValues={{ type: 'register' }}
+          onFinish={handleRegisterSubmit}
         >
-          <Form.Item name="type" hidden>
-            <Input />
-          </Form.Item>
-
           <Form.Item
             name="username"
             label="用户名"
@@ -128,7 +151,7 @@ const Auth: React.FC = () => {
           </Form.Item>
 
           <Form.Item
-            name="confirmPassword"
+            name="re_password"
             label="确认密码"
             dependencies={['password']}
             rules={[
@@ -151,7 +174,7 @@ const Auth: React.FC = () => {
 
   return (
     <div style={{ maxWidth: 400, margin: '0 auto', padding: '24px' }}>
-      <Tabs defaultActiveKey="login" items={items} />
+      <Tabs activeKey={activeTab} onChange={handleTabChange} items={items} />
     </div>
   );
 };

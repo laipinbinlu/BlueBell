@@ -5,6 +5,7 @@ import (
 	"blue_bell/logger"
 	"blue_bell/middlewares"
 	"blue_bell/settings"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"time"
@@ -16,6 +17,17 @@ func Setup(config *settings.Config, mode string) *gin.Engine {
 		gin.SetMode(gin.ReleaseMode) // 模式设置为发布模式，其他为调试模式
 	}
 	r := gin.New()
+	
+	// 添加CORS中间件
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length", "Access-Control-Allow-Origin"},
+		AllowCredentials: true,
+		MaxAge:          12 * time.Hour,
+	}))
+	
 	// 使用配置好的日志,中间件的使用
 	r.Use(logger.GinLogger(), logger.GinRecovery(true), middlewares.RateLimitMiddleware(2*time.Second, 1))
 
