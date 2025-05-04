@@ -6,6 +6,7 @@ import (
 	"blue_bell/models"
 	"blue_bell/pkg/snowflake"
 	"fmt"
+
 	"go.uber.org/zap"
 )
 
@@ -14,7 +15,7 @@ func CreatePost(p *models.Post) (err error) {
 	// 1. 生成post id
 	p.ID = snowflake.GetID()
 	// 2. 插入到数据库中   mysql 和redis数据库
-	//3. 返回结果
+	//3. 返回结果   --->创建帖子 先创建mysql再在创建redis帖子消息。
 	err = mysql.CreatePost(p)
 	if err != nil {
 		return err

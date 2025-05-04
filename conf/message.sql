@@ -1,3 +1,4 @@
+-- Active: 1744179549288@@127.0.0.1@3306@bluebell
 -- 创建消息表
 CREATE TABLE IF NOT EXISTS `message` (
     `msg_id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '消息ID',

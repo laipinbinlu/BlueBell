@@ -65,6 +65,7 @@ func Setup(config *settings.Config, mode string) *gin.Engine {
 		// get 获取帖子的列表 该列表具有按照时间或分数展示帖子功能
 		v1.GET("/posts2", controller.GetPostListHandler2)
 	}
+
 	{ // 帖子投票功能
 		v1.POST("/vote", controller.PostVoteController)
 	}

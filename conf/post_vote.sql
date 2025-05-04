@@ -1,3 +1,4 @@
+-- Active: 1744179549288@@127.0.0.1@3306@bluebell
 -- 创建帖子投票记录表
 CREATE TABLE IF NOT EXISTS `post_vote` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
