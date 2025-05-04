@@ -1,12 +1,15 @@
 package redis
 
 import (
+	"blue_bell/dao/mysql"
 	"context"
 	"errors"
-	"github.com/redis/go-redis/v9"
 	"math"
 	"strconv"
 	"time"
+
+	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 /*
@@ -47,8 +50,12 @@ func VoteForPost(postID, userID string, v float64) (err error) {
 	}
 
 	// 2.更新帖子分数
-	// 需要先查看该用户为该帖子投票记录
-	ov := client.ZScore(context.Background(), getRedisKey(KeyPostVotedZSetPF+postID), userID).Val()
+	// 需要先查看该用户为该帖子的投票记录
+	key := getRedisKey(KeyPostVotedHashPF + postID)
+	ov, err := client.HGet(context.Background(), key, userID).Float64()
+	if err != nil && err != redis.Nil {
+		return err
+	}
 	// 如果投票的值相同，则表示已经投过了票了，没有必要再投票了
 	if v == ov {
 		return ErrorVoted
@@ -65,18 +72,18 @@ func VoteForPost(postID, userID string, v float64) (err error) {
 	// 使用redis事务
 	pipeline := client.TxPipeline()
 
-	// 在根据结果更新帖子分数
+	// 更新帖子分数
 	pipeline.ZIncrBy(context.Background(), getRedisKey(KeyPostScoreZSet), op*diffAbs*VoteScore, postID)
 
-	// 3.将用户投票信息写入对应的redis中
-	if v == 0 { // 取消投票
-		pipeline.ZRem(context.Background(), getRedisKey(KeyPostVotedZSetPF+postID), userID)
-	} else { // 重新更改投票记录
-		pipeline.ZAdd(context.Background(), getRedisKey(KeyPostVotedZSetPF+postID), redis.Z{
-			Score:  v,
-			Member: userID,
-		})
+	// 3.记录用户为该帖子投票的数据
+	if v == 0 {
+		// 取消投票，删除投票记录
+		pipeline.HDel(context.Background(), key, userID)
+	} else {
+		// 更新投票记录
+		pipeline.HSet(context.Background(), key, userID, v)
 	}
+
 	_, err = pipeline.Exec(context.Background())
 	return err
 }
@@ -104,4 +111,46 @@ func CreatePost(postID, communityID int64) error {
 	_, err := pipeline.Exec(context.Background())
 
 	return err
+}
+
+// GetPostVoteData 根据ids查询每篇帖子的投赞成票的数据
+func GetPostVoteData(ids []string) (data []int64, err error) {
+	// 查询每个帖子的赞成票数量
+	data = make([]int64, 0, len(ids))
+
+	for _, id := range ids {
+		// 1. 先从Redis获取投票数据
+		key := getRedisKey(KeyPostVotedHashPF + id)
+		vals, err := client.HVals(context.Background(), key).Result()
+		if err != nil {
+			return nil, err
+		}
+
+		// 2. 如果Redis中有数据，直接统计
+		var count int64
+		if len(vals) > 0 {
+			for _, val := range vals {
+				if val == "1" {
+					count++
+				}
+			}
+		} else {
+			// 3. 如果Redis中没有数据，从MySQL中获取
+			postID, _ := strconv.ParseInt(id, 10, 64)
+			upCount, _, err := mysql.GetPostVoteCount(postID)
+			if err != nil {
+				// 如果发生错误，记录日志但继续处理其他帖子
+				zap.L().Error("mysql.GetPostVoteCount failed",
+					zap.String("post_id", id),
+					zap.Error(err))
+				count = 0
+			} else {
+				count = int64(upCount)
+			}
+		}
+
+		data = append(data, count)
+	}
+
+	return data, nil
 }

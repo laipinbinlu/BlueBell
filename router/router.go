@@ -69,6 +69,7 @@ func Setup(config *settings.Config, mode string) *gin.Engine {
 		v1.POST("/vote", controller.PostVoteController)
 	}
 
+	// 新添加的功能
 	{ // 私信功能
 		// 建立WebSocket连接请求
 		v1.GET("/ws", func(c *gin.Context) {
@@ -79,7 +80,7 @@ func Setup(config *settings.Config, mode string) *gin.Engine {
 			}
 			controller.WebSocketHandler(c)
 		})
-		// 发送消息
+		// 发送消息  ----> 发送的目标对象为用户的uid 因为可能会重名，所以需要使用uid来区分，但是需要前端传入对方的uid（前端需要存储对应的uid）
 		v1.POST("/message", controller.SendMessageHandler)
 		// 获取消息列表
 		v1.GET("/messages", controller.GetMessageListHandler)

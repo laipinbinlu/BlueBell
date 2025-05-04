@@ -176,7 +176,7 @@ func GetChatHistoryHandler(c *gin.Context) {
 
 // 发送离线消息  --- 获取数据库中的离线消息
 func sendOfflineMessages(client *ws.Client) {
-	messages, err := mysql.GetMessagesByUserID(client.ID, 0, 100)
+	messages, err := mysql.GetMessagesByUserID(client.ID, 0, 100) // 先获取用户所有相关的消息
 	if err != nil {
 		zap.L().Error("get offline messages failed", zap.Error(err))
 		return

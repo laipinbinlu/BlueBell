@@ -3,9 +3,10 @@ package redis
 import (
 	"blue_bell/models"
 	"context"
-	"github.com/redis/go-redis/v9"
 	"strconv"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 func getIDsFormKey(key string, Page, Size int64) ([]string, error) {
@@ -24,26 +25,6 @@ func GetPostIDsInOrder(p *models.ParamPostList) ([]string, error) {
 		key = getRedisKey(KeyPostScoreZSet)
 	}
 	return getIDsFormKey(key, p.Page, p.Size)
-}
-
-// GetPostVoteData 根据ids查询每篇帖子的投赞成票的数据
-func GetPostVoteData(ids []string) (data []int64, err error) {
-	// 直接查询redis对应的数据表即可  得到每个帖子的赞成票数目
-	data = make([]int64, 0, len(ids))
-	pipeline := client.Pipeline()
-	for _, id := range ids {
-		key := getRedisKey(KeyPostVotedZSetPF + id)
-		pipeline.ZCount(context.Background(), key, "1", "1")
-	}
-	cmders, err := pipeline.Exec(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	for _, cmder := range cmders {
-		v := cmder.(*redis.IntCmd).Val()
-		data = append(data, v)
-	}
-	return data, nil
 }
 
 // 按照社区查询出排好序的ids

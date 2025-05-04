@@ -7,7 +7,7 @@ const (
 	KeyPrefix          = "bluebell:"   // 项目前缀key
 	KeyPostTimeZSet    = "post:time"   // 帖子和发表时间-->对应于展示最新帖子的业务
 	KeyPostScoreZSet   = "post:score"  //帖子和投票分数 -->对应于展示最热帖子业务
-	KeyPostVotedZSetPF = "post:voted:" // 帖子和投票结果 后面需要提供参数    比如每个帖子记录了投票用户id和投票结果
+	KeyPostVotedHashPF = "post:voted:" // 帖子的投票记录 Hash结构 {userID: vote_direction}
 	KeyCommunitySetPF  = "community:"  // 保存帖子的id，每个分区下的帖子的id
 )
 
