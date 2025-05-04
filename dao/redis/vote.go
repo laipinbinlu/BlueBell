@@ -53,7 +53,7 @@ func VoteForPost(postID, userID string, v float64) (err error) {
 	// 需要先查看该用户为该帖子的投票记录
 	key := getRedisKey(KeyPostVotedHashPF + postID)
 	ov, err := client.HGet(context.Background(), key, userID).Float64()
-	if err != nil && err != redis.Nil {
+	if err != nil && err != redis.Nil { // redis.nil 表示当前该hash表不存在，后续的hashset会创建该hash表，所有不用取报错  ov为0值
 		return err
 	}
 	// 如果投票的值相同，则表示已经投过了票了，没有必要再投票了
@@ -107,6 +107,8 @@ func CreatePost(postID, communityID int64) error {
 	// 补充： 初始化社区id对应的帖子id的表  set
 	cKey := getRedisKey(KeyCommunitySetPF + strconv.Itoa(int(communityID)))
 	pipeline.SAdd(context.Background(), cKey, postID)
+
+	// 创建帖子对应的投票记录的hash 表
 
 	_, err := pipeline.Exec(context.Background())
 

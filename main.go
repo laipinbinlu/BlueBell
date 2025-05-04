@@ -5,6 +5,7 @@ import (
 	"blue_bell/dao/mysql"
 	"blue_bell/dao/redis"
 	"blue_bell/logger"
+	"blue_bell/pkg/rabbitmq"
 	"blue_bell/pkg/snowflake"
 	"blue_bell/router"
 	"blue_bell/settings"
@@ -66,10 +67,20 @@ func main() {
 		return
 	}
 
-	//5.注册路由
+	// 5.初始化 RabbitMQ
+	if err := rabbitmq.Init(); err != nil {
+		fmt.Printf("init rabbitmq failed, err:%v\n", err)
+		return
+	}
+	defer rabbitmq.RMQ.Close()
+
+	// 启动投票消费者
+	go rabbitmq.StartVoteConsumer()
+
+	//6.注册路由
 	r := router.Setup(settings.Conf, settings.Conf.Mode)
 
-	//6.启动服务(优雅关机)
+	//7.启动服务(优雅关机)
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", settings.Conf.Port),
 		Handler: r,

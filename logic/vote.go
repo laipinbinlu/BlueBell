@@ -1,18 +1,20 @@
 package logic
 
 import (
-	"blue_bell/dao/mysql"
 	"blue_bell/dao/redis"
 	"blue_bell/models"
+	"blue_bell/pkg/rabbitmq"
 	"strconv"
 
 	"go.uber.org/zap"
 )
 
-// 实际的帖子投票需求
+// VoteForPost 实现投票的功能
 func VoteForPost(uid int64, p *models.ParamVoteData) error {
-	zap.L().Debug("VoteForPost", zap.Int64("uid", uid),
-		zap.String("PostID", p.PostID), zap.Int8("Direction", p.Direction))
+	zap.L().Debug("VoteForPost",
+		zap.Int64("uid", uid),
+		zap.String("PostID", p.PostID),
+		zap.Int8("Direction", p.Direction))
 
 	// 将字符串格式的postID转换为int64
 	postID, err := strconv.ParseInt(p.PostID, 10, 64)
@@ -25,16 +27,18 @@ func VoteForPost(uid int64, p *models.ParamVoteData) error {
 		return err
 	}
 
-	// 2. 保存投票记录到MySQL  --->在将投票记录存储到数据库中
-	if err := mysql.SavePostVote(postID, uid, p.Direction); err != nil {
-		// 如果MySQL保存失败，记录错误日志
-		zap.L().Error("mysql.SavePostVote failed",
-			zap.Int64("post_id", postID),
-			zap.Int64("user_id", uid),
-			zap.Error(err))
-		// 注意：这里我们选择继续执行而不是立即返回错误，因为Redis的投票已经成功
-		// 我们可以通过后台任务来重试MySQL的保存操作
-	}
+	// 2. 异步保存投票记录到MySQL  --->通过消息队列异步处理
+	go func() {
+		if err := rabbitmq.RMQ.PublishVoteMessage(postID, uid, p.Direction); err != nil {
+			zap.L().Error("发送投票消息到RabbitMQ失败",
+				zap.Error(err),
+				zap.Int64("post_id", postID),
+				zap.Int64("user_id", uid),
+				zap.Int8("direction", p.Direction))
+			// 注意：即使消息发送失败，我们也不中断流程，因为Redis中的数据已更新成功
+			// 这里可以考虑将失败的消息写入本地日志或重试队列
+		}
+	}()
 
 	return nil
 }
